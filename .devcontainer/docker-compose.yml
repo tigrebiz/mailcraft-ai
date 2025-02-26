@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  frontend:
+    build: 
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      - ..:/workspace:cached
+      - node_modules:/workspace/node_modules
+    command: sleep infinity
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_OPENAI_API_KEY=
+    ports:
+      - "3000:3000"
+    networks:
+      - mailcraft-network
+    user: node
+
+networks:
+  mailcraft-network:
+    driver: bridge
+
+volumes:
+  node_modules: 
