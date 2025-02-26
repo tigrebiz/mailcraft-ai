@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { NextPage } from "next";
 import Head from "next/head";
 
@@ -13,6 +13,109 @@ const Home: NextPage = () => {
   const [signature, setSignature] = useState(
     "--\n株式会社メールクラフト\n佐藤 太郎\nメール: taro.sato@example.com\n電話: 03-1234-5678"
   );
+  const [savedRecipients, setSavedRecipients] = useState<
+    Array<{ id: string; name: string; content: string }>
+  >([]);
+  const [recipientName, setRecipientName] = useState("");
+  const [showSaveForm, setShowSaveForm] = useState(false);
+  const [showSavedList, setShowSavedList] = useState(false);
+
+  // ローカルストレージから保存済み宛先を読み込む
+  useEffect(() => {
+    const savedData = localStorage.getItem("savedRecipients");
+    if (savedData) {
+      setSavedRecipients(JSON.parse(savedData));
+    }
+  }, []);
+
+  // サンプル宛先データ
+  const sampleRecipients = [
+    {
+      id: "sample-1",
+      name: "株式会社テックソリューション",
+      content: "株式会社テックソリューション\nIT事業部\n鈴木",
+    },
+    {
+      id: "sample-2",
+      name: "グローバル商事",
+      content: "グローバル商事株式会社\n営業企画部\n佐藤部長",
+    },
+    {
+      id: "sample-3",
+      name: "山田建設",
+      content: "山田建設株式会社\n工事管理課\n田中様",
+    },
+  ];
+
+  // サンプル宛先を追加
+  const addSampleRecipients = () => {
+    // まだ追加されていないサンプルだけを追加
+    const existingIds = savedRecipients.map((item) => item.id);
+    const newSamples = sampleRecipients.filter(
+      (sample) => !existingIds.includes(sample.id)
+    );
+
+    if (newSamples.length === 0) {
+      alert("すべてのサンプルデータはすでに追加されています");
+      return;
+    }
+
+    const updatedRecipients = [...savedRecipients, ...newSamples];
+    setSavedRecipients(updatedRecipients);
+    localStorage.setItem("savedRecipients", JSON.stringify(updatedRecipients));
+
+    // リストを表示
+    setShowSavedList(true);
+  };
+
+  // サンプル宛先を一括削除
+  const removeSampleRecipients = () => {
+    const sampleIds = sampleRecipients.map((sample) => sample.id);
+    const nonSampleRecipients = savedRecipients.filter(
+      (item) => !sampleIds.includes(item.id)
+    );
+
+    setSavedRecipients(nonSampleRecipients);
+    localStorage.setItem(
+      "savedRecipients",
+      JSON.stringify(nonSampleRecipients)
+    );
+  };
+
+  // 宛先情報を保存
+  const saveRecipient = () => {
+    if (!recipient.trim() || !recipientName.trim()) return;
+
+    const newRecipient = {
+      id: Date.now().toString(),
+      name: recipientName,
+      content: recipient,
+    };
+
+    const updatedRecipients = [...savedRecipients, newRecipient];
+    setSavedRecipients(updatedRecipients);
+
+    // ローカルストレージに保存
+    localStorage.setItem("savedRecipients", JSON.stringify(updatedRecipients));
+
+    // フォームをリセット
+    setRecipientName("");
+    setShowSaveForm(false);
+  };
+
+  // 保存済み宛先を選択
+  const selectRecipient = (content: string) => {
+    setRecipient(content);
+    setShowSavedList(false);
+  };
+
+  // 保存済み宛先を削除
+  const deleteRecipient = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // 親要素のクリックイベントを停止
+    const updatedRecipients = savedRecipients.filter((item) => item.id !== id);
+    setSavedRecipients(updatedRecipients);
+    localStorage.setItem("savedRecipients", JSON.stringify(updatedRecipients));
+  };
 
   // メール生成の処理（実際にはAI APIを呼び出す）
   const generateMail = () => {
@@ -157,7 +260,216 @@ ${signature}`,
                   <h4 className="text-sm font-medium text-gray-700">
                     宛先情報（任意）
                   </h4>
+                  <div className="flex space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowSavedList(!showSavedList)}
+                      className="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 flex items-center"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-3.5 w-3.5 mr-1"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                      保存済み宛先
+                    </button>
+                    {!showSaveForm ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowSaveForm(true)}
+                        className="text-xs px-2 py-1 bg-green-50 text-green-600 rounded hover:bg-green-100 flex items-center"
+                        disabled={!recipient.trim()}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-3.5 w-3.5 mr-1"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                          />
+                        </svg>
+                        保存
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setShowSaveForm(false)}
+                        className="text-xs px-2 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100 flex items-center"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-3.5 w-3.5 mr-1"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                        キャンセル
+                      </button>
+                    )}
+                  </div>
                 </div>
+
+                {/* 保存フォーム */}
+                {showSaveForm && (
+                  <div className="mb-3 p-3 border border-green-200 rounded-md bg-green-50">
+                    <label
+                      htmlFor="recipientName"
+                      className="block text-sm text-gray-700 mb-1"
+                    >
+                      宛先名（例: 〇〇株式会社）
+                    </label>
+                    <div className="flex space-x-2">
+                      <input
+                        id="recipientName"
+                        type="text"
+                        className="flex-1 px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        value={recipientName}
+                        onChange={(e) => setRecipientName(e.target.value)}
+                        placeholder="保存する宛先の名前"
+                      />
+                      <button
+                        type="button"
+                        onClick={saveRecipient}
+                        disabled={!recipientName.trim() || !recipient.trim()}
+                        className={`px-3 py-1 text-sm rounded-md ${
+                          !recipientName.trim() || !recipient.trim()
+                            ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                            : "bg-green-600 text-white hover:bg-green-700"
+                        }`}
+                      >
+                        保存する
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* 保存済み宛先リスト */}
+                {showSavedList && (
+                  <div className="mb-3">
+                    {/* サンプルデータ管理ボタン */}
+                    <div className="flex justify-between items-center mb-2">
+                      <button
+                        type="button"
+                        onClick={addSampleRecipients}
+                        className="text-xs px-2 py-1 bg-indigo-50 text-indigo-600 rounded hover:bg-indigo-100 flex items-center"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-3.5 w-3.5 mr-1"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                          />
+                        </svg>
+                        サンプルデータを追加
+                      </button>
+                      {savedRecipients.some((item) =>
+                        sampleRecipients.map((s) => s.id).includes(item.id)
+                      ) && (
+                        <button
+                          type="button"
+                          onClick={removeSampleRecipients}
+                          className="text-xs px-2 py-1 bg-gray-50 text-gray-600 rounded hover:bg-gray-100 flex items-center"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-3.5 w-3.5 mr-1"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                          サンプルを削除
+                        </button>
+                      )}
+                    </div>
+
+                    {savedRecipients.length > 0 ? (
+                      <div className="max-h-48 overflow-y-auto border border-blue-200 rounded-md divide-y divide-blue-100">
+                        {savedRecipients.map((item) => (
+                          <div
+                            key={item.id}
+                            onClick={() => selectRecipient(item.content)}
+                            className={`p-2 hover:bg-blue-50 cursor-pointer flex justify-between items-center ${
+                              item.id.startsWith("sample-")
+                                ? "bg-indigo-50"
+                                : ""
+                            }`}
+                          >
+                            <span className="text-sm font-medium">
+                              {item.name}
+                              {item.id.startsWith("sample-") && (
+                                <span className="ml-2 text-xs px-1.5 py-0.5 bg-indigo-100 text-indigo-600 rounded-full">
+                                  サンプル
+                                </span>
+                              )}
+                            </span>
+                            <button
+                              onClick={(e) => deleteRecipient(item.id, e)}
+                              className="text-xs px-1.5 py-0.5 text-red-500 hover:bg-red-50 rounded"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-3.5 w-3.5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                />
+                              </svg>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-2 border border-gray-200 rounded-md bg-gray-50 text-center">
+                        <p className="text-sm text-gray-500">
+                          保存された宛先がありません
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div>
                   <label
                     htmlFor="recipient"
