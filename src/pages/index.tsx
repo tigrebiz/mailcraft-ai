@@ -616,14 +616,39 @@ ${signatureToUse}`,
                   >
                     宛先
                   </label>
-                  <textarea
-                    id="recipient"
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    value={recipient}
-                    onChange={(e) => setRecipient(e.target.value)}
-                    placeholder="例: 株式会社サンプル&#13;&#10;営業部&#13;&#10;山田"
-                  ></textarea>
+                  <div className="relative">
+                    <textarea
+                      id="recipient"
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      value={recipient}
+                      onChange={(e) => setRecipient(e.target.value)}
+                      placeholder="例: 株式会社サンプル&#13;&#10;営業部&#13;&#10;山田"
+                    ></textarea>
+                    {recipient.trim() && (
+                      <button
+                        type="button"
+                        onClick={() => setRecipient("")}
+                        className="absolute top-2 right-2 text-gray-300 hover:text-gray-500"
+                        title="宛先をクリア"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                   <p className="text-xs text-gray-500 mt-1">
                     複数行の宛先もそのまま入力できます。「様」は自動的に追加されます。
                   </p>
@@ -963,6 +988,29 @@ ${signatureToUse}`,
                       onChange={(e) => setSignature(e.target.value)}
                       placeholder="例: --&#13;&#10;株式会社メールクラフト&#13;&#10;鈴木 一郎&#13;&#10;メール: ichiro.suzuki@example.com&#13;&#10;電話: 03-1234-5678"
                     ></textarea>
+                    {signature.trim() && (
+                      <button
+                        type="button"
+                        onClick={() => setSignature("")}
+                        className="absolute top-2 right-2 text-gray-300 hover:text-gray-500"
+                        title="署名をクリア"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    )}
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
                     メール署名として使用されます。複数行入力可能で、入力された内容がそのままメールの末尾に追加されます。
@@ -978,14 +1026,39 @@ ${signatureToUse}`,
                 >
                   伝えたい内容 <span className="text-red-500">*</span>
                 </label>
-                <textarea
-                  id="content"
-                  rows={8}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 font-medium"
-                  placeholder="例: 明日の会議資料を添付します。ご確認をお願いします。"
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                ></textarea>
+                <div className="relative">
+                  <textarea
+                    id="content"
+                    rows={8}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 font-medium"
+                    placeholder="例: 明日の会議資料を添付します。ご確認をお願いします。"
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                  ></textarea>
+                  {inputText.trim() && (
+                    <button
+                      type="button"
+                      onClick={() => setInputText("")}
+                      className="absolute top-2 right-2 text-gray-300 hover:text-gray-500"
+                      title="内容をクリア"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  )}
+                </div>
                 <p className="text-xs text-gray-500 mt-1">
                   箇条書きでも文章でもOK。メールにしたい内容を自由に入力してください。
                 </p>
