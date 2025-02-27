@@ -10,9 +10,7 @@ const Home: NextPage = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [recipient, setRecipient] = useState("");
-  const [signature, setSignature] = useState(
-    "--\n株式会社メールクラフト\n佐藤 太郎\nメール: taro.sato@example.com\n電話: 03-1234-5678"
-  );
+  const [signature, setSignature] = useState("");
   const [savedRecipients, setSavedRecipients] = useState<
     Array<{ id: string; name: string; content: string }>
   >([]);
@@ -20,11 +18,26 @@ const Home: NextPage = () => {
   const [showSaveForm, setShowSaveForm] = useState(false);
   const [showSavedList, setShowSavedList] = useState(false);
 
+  // 署名関連の状態
+  const [savedSignatures, setSavedSignatures] = useState<
+    Array<{ id: string; name: string; content: string; isDefault?: boolean }>
+  >([]);
+  const [signatureName, setSignatureName] = useState("");
+  const [showSignatureSaveForm, setShowSignatureSaveForm] = useState(false);
+  const [showSignatureList, setShowSignatureList] = useState(false);
+  const [previewSignature, setPreviewSignature] = useState<string | null>(null);
+
   // ローカルストレージから保存済み宛先を読み込む
   useEffect(() => {
     const savedData = localStorage.getItem("savedRecipients");
     if (savedData) {
       setSavedRecipients(JSON.parse(savedData));
+    }
+
+    // ローカルストレージから保存済み署名を読み込む
+    const savedSignatureData = localStorage.getItem("savedSignatures");
+    if (savedSignatureData) {
+      setSavedSignatures(JSON.parse(savedSignatureData));
     }
   }, []);
 
@@ -44,6 +57,29 @@ const Home: NextPage = () => {
       id: "sample-3",
       name: "山田建設",
       content: "山田建設株式会社\n工事管理課\n田中様",
+    },
+  ];
+
+  // サンプル署名データ
+  const sampleSignatures = [
+    {
+      id: "signature-sample-1",
+      name: "標準（社内向け）",
+      content:
+        "--\n株式会社メールクラフト\n佐藤 太郎\nメール: taro.sato@example.com\n電話: 03-1234-5678",
+      isDefault: true,
+    },
+    {
+      id: "signature-sample-2",
+      name: "丁寧（社外向け）",
+      content:
+        "--\n株式会社メールクラフト\n営業部 主任\n佐藤 太郎\n\nメール: taro.sato@example.com\n電話: 03-1234-5678\n携帯: 090-1234-5678\n〒100-0001 東京都千代田区千代田1-1",
+    },
+    {
+      id: "signature-sample-3",
+      name: "英語版",
+      content:
+        "--\nTaro Sato\nSales Department\nMailCraft Inc.\n\nEmail: taro.sato@example.com\nPhone: +81-3-1234-5678\nMobile: +81-90-1234-5678",
     },
   ];
 
@@ -117,6 +153,106 @@ const Home: NextPage = () => {
     localStorage.setItem("savedRecipients", JSON.stringify(updatedRecipients));
   };
 
+  // サンプル署名を追加
+  const addSampleSignatures = () => {
+    // まだ追加されていないサンプルだけを追加
+    const existingIds = savedSignatures.map((item) => item.id);
+    const newSamples = sampleSignatures.filter(
+      (sample) => !existingIds.includes(sample.id)
+    );
+
+    if (newSamples.length === 0) {
+      alert("すべてのサンプル署名はすでに追加されています");
+      return;
+    }
+
+    const updatedSignatures = [...savedSignatures, ...newSamples];
+    setSavedSignatures(updatedSignatures);
+    localStorage.setItem("savedSignatures", JSON.stringify(updatedSignatures));
+
+    // リストを表示
+    setShowSignatureList(true);
+  };
+
+  // サンプル署名を一括削除
+  const removeSampleSignatures = () => {
+    const sampleIds = sampleSignatures.map((sample) => sample.id);
+    const nonSampleSignatures = savedSignatures.filter(
+      (item) => !sampleIds.includes(item.id)
+    );
+
+    setSavedSignatures(nonSampleSignatures);
+    localStorage.setItem(
+      "savedSignatures",
+      JSON.stringify(nonSampleSignatures)
+    );
+  };
+
+  // 署名情報を保存
+  const saveSignature = () => {
+    if (!signature.trim() || !signatureName.trim()) return;
+
+    const newSignature = {
+      id: Date.now().toString(),
+      name: signatureName,
+      content: signature,
+      isDefault: savedSignatures.length === 0, // 最初の署名はデフォルトに
+    };
+
+    const updatedSignatures = [...savedSignatures, newSignature];
+    setSavedSignatures(updatedSignatures);
+
+    // ローカルストレージに保存
+    localStorage.setItem("savedSignatures", JSON.stringify(updatedSignatures));
+
+    // フォームをリセット
+    setSignatureName("");
+    setShowSignatureSaveForm(false);
+  };
+
+  // 保存済み署名を選択
+  const selectSignature = (content: string) => {
+    setSignature(content);
+    setShowSignatureList(false);
+    setPreviewSignature(null);
+  };
+
+  // デフォルト署名を設定
+  const setDefaultSignature = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // 親要素のクリックイベントを停止
+
+    const updatedSignatures = savedSignatures.map((sig) => ({
+      ...sig,
+      isDefault: sig.id === id,
+    }));
+
+    setSavedSignatures(updatedSignatures);
+    localStorage.setItem("savedSignatures", JSON.stringify(updatedSignatures));
+  };
+
+  // 保存済み署名を削除
+  const deleteSignature = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // 親要素のクリックイベントを停止
+    const updatedSignatures = savedSignatures.filter((item) => item.id !== id);
+
+    // 削除した署名がデフォルトだった場合、新しいデフォルトを設定
+    if (
+      savedSignatures.find((s) => s.id === id)?.isDefault &&
+      updatedSignatures.length > 0
+    ) {
+      updatedSignatures[0].isDefault = true;
+    }
+
+    setSavedSignatures(updatedSignatures);
+    localStorage.setItem("savedSignatures", JSON.stringify(updatedSignatures));
+  };
+
+  // 署名プレビュー表示
+  const showSignaturePreview = (content: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // 親要素のクリックイベントを停止
+    setPreviewSignature(content);
+  };
+
   // メール生成の処理（実際にはAI APIを呼び出す）
   const generateMail = () => {
     if (!inputText.trim()) return;
@@ -143,6 +279,9 @@ const Home: NextPage = () => {
         formattedRecipient = "ご担当者 様";
       }
 
+      // 署名はユーザーが入力したものをそのまま使用（自動挿入機能を削除）
+      const signatureToUse = signature;
+
       // モックデータ - 実際の実装では削除
       const mockResponses = [
         `${formattedRecipient}
@@ -153,7 +292,7 @@ ${inputText}
 
 ご確認のほど、よろしくお願いいたします。
 
-${signature}`,
+${signatureToUse}`,
         `${formattedRecipient}
 
 いつもお世話になっております。
@@ -165,7 +304,7 @@ ${inputText}
 
 どうぞよろしくお願い申し上げます。
 
-${signature}`,
+${signatureToUse}`,
         `${formattedRecipient}
 
 平素より格別のご高配を賜り、厚く御礼申し上げます。
@@ -178,7 +317,7 @@ ${inputText}
 
 今後とも何卒よろしくお願い申し上げます。
 
-${signature}`,
+${signatureToUse}`,
       ];
 
       const generatedMail = mockResponses[politenessLevel - 1];
@@ -497,7 +636,317 @@ ${signature}`,
                   <h4 className="text-sm font-medium text-gray-700">
                     差出人情報（任意）
                   </h4>
+                  <div className="flex space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowSignatureList(!showSignatureList)}
+                      className="text-xs px-2 py-1 bg-purple-50 text-purple-600 rounded hover:bg-purple-100 flex items-center"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-3.5 w-3.5 mr-1"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                      保存済み署名
+                    </button>
+                    {!showSignatureSaveForm ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowSignatureSaveForm(true)}
+                        className="text-xs px-2 py-1 bg-green-50 text-green-600 rounded hover:bg-green-100 flex items-center"
+                        disabled={!signature.trim()}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-3.5 w-3.5 mr-1"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                          />
+                        </svg>
+                        保存
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setShowSignatureSaveForm(false)}
+                        className="text-xs px-2 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100 flex items-center"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-3.5 w-3.5 mr-1"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                        キャンセル
+                      </button>
+                    )}
+                  </div>
                 </div>
+
+                {/* 署名保存フォーム */}
+                {showSignatureSaveForm && (
+                  <div className="mb-3 p-3 border border-green-200 rounded-md bg-green-50">
+                    <label
+                      htmlFor="signatureName"
+                      className="block text-sm text-gray-700 mb-1"
+                    >
+                      署名の名前（例: 社内用、丁寧、英語）
+                    </label>
+                    <div className="flex space-x-2">
+                      <input
+                        id="signatureName"
+                        type="text"
+                        className="flex-1 px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        value={signatureName}
+                        onChange={(e) => setSignatureName(e.target.value)}
+                        placeholder="保存する署名の名前"
+                      />
+                      <button
+                        type="button"
+                        onClick={saveSignature}
+                        disabled={!signatureName.trim() || !signature.trim()}
+                        className={`px-3 py-1 text-sm rounded-md ${
+                          !signatureName.trim() || !signature.trim()
+                            ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                            : "bg-green-600 text-white hover:bg-green-700"
+                        }`}
+                      >
+                        保存する
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* 保存済み署名リスト */}
+                {showSignatureList && (
+                  <div className="mb-3">
+                    {/* サンプルデータ管理ボタン */}
+                    <div className="flex justify-between items-center mb-2">
+                      <button
+                        type="button"
+                        onClick={addSampleSignatures}
+                        className="text-xs px-2 py-1 bg-purple-50 text-purple-600 rounded hover:bg-purple-100 flex items-center"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-3.5 w-3.5 mr-1"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                          />
+                        </svg>
+                        サンプル署名を追加
+                      </button>
+                      {savedSignatures.some((item) =>
+                        sampleSignatures.map((s) => s.id).includes(item.id)
+                      ) && (
+                        <button
+                          type="button"
+                          onClick={removeSampleSignatures}
+                          className="text-xs px-2 py-1 bg-gray-50 text-gray-600 rounded hover:bg-gray-100 flex items-center"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-3.5 w-3.5 mr-1"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                          サンプルを削除
+                        </button>
+                      )}
+                    </div>
+
+                    {/* 署名プレビュー */}
+                    {previewSignature && (
+                      <div className="mb-2 p-3 border border-purple-200 rounded-md bg-purple-50 relative">
+                        <button
+                          className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                          onClick={() => setPreviewSignature(null)}
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                        <h5 className="text-xs font-medium text-purple-700 mb-1">
+                          署名プレビュー
+                        </h5>
+                        <div className="whitespace-pre-wrap text-sm font-mono border-t pt-2 text-gray-700">
+                          {previewSignature}
+                        </div>
+                        <div className="mt-2 text-right">
+                          <button
+                            onClick={() => selectSignature(previewSignature)}
+                            className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
+                          >
+                            この署名を使用
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {savedSignatures.length > 0 ? (
+                      <div className="max-h-48 overflow-y-auto border border-purple-200 rounded-md divide-y divide-purple-100">
+                        {savedSignatures.map((item) => (
+                          <div
+                            key={item.id}
+                            onClick={() => selectSignature(item.content)}
+                            className={`p-2 hover:bg-purple-50 cursor-pointer flex justify-between items-center ${
+                              item.id.startsWith("signature-sample-")
+                                ? "bg-purple-50"
+                                : ""
+                            }`}
+                          >
+                            <div className="flex items-center">
+                              <span className="text-sm font-medium">
+                                {item.name}
+                                {item.id.startsWith("signature-sample-") && (
+                                  <span className="ml-2 text-xs px-1.5 py-0.5 bg-purple-100 text-purple-600 rounded-full">
+                                    サンプル
+                                  </span>
+                                )}
+                                {item.isDefault && (
+                                  <span className="ml-2 text-xs px-1.5 py-0.5 bg-green-100 text-green-600 rounded-full">
+                                    デフォルト
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <button
+                                onClick={(e) =>
+                                  showSignaturePreview(item.content, e)
+                                }
+                                className="text-xs px-1.5 py-0.5 text-blue-500 hover:bg-blue-50 rounded"
+                                title="プレビュー"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-3.5 w-3.5"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                  />
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                  />
+                                </svg>
+                              </button>
+                              {!item.isDefault && (
+                                <button
+                                  onClick={(e) =>
+                                    setDefaultSignature(item.id, e)
+                                  }
+                                  className="text-xs px-1.5 py-0.5 text-green-500 hover:bg-green-50 rounded"
+                                  title="デフォルトに設定"
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-3.5 w-3.5"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M5 13l4 4L19 7"
+                                    />
+                                  </svg>
+                                </button>
+                              )}
+                              <button
+                                onClick={(e) => deleteSignature(item.id, e)}
+                                className="text-xs px-1.5 py-0.5 text-red-500 hover:bg-red-50 rounded"
+                                title="削除"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-3.5 w-3.5"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                  />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-2 border border-gray-200 rounded-md bg-gray-50 text-center">
+                        <p className="text-sm text-gray-500">
+                          保存された署名がありません
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div>
                   <label
                     htmlFor="signature"
@@ -505,14 +954,16 @@ ${signature}`,
                   >
                     署名
                   </label>
-                  <textarea
-                    id="signature"
-                    rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    value={signature}
-                    onChange={(e) => setSignature(e.target.value)}
-                    placeholder="例: --&#13;&#10;株式会社メールクラフト&#13;&#10;鈴木 一郎&#13;&#10;メール: ichiro.suzuki@example.com&#13;&#10;電話: 03-1234-5678"
-                  ></textarea>
+                  <div className="relative">
+                    <textarea
+                      id="signature"
+                      rows={4}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      value={signature}
+                      onChange={(e) => setSignature(e.target.value)}
+                      placeholder="例: --&#13;&#10;株式会社メールクラフト&#13;&#10;鈴木 一郎&#13;&#10;メール: ichiro.suzuki@example.com&#13;&#10;電話: 03-1234-5678"
+                    ></textarea>
+                  </div>
                   <p className="text-xs text-gray-500 mt-1">
                     メール署名として使用されます。複数行入力可能で、入力された内容がそのままメールの末尾に追加されます。
                   </p>
