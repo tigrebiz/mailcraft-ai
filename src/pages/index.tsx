@@ -986,7 +986,9 @@ ${signatureToUse}`,
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                       value={signature}
                       onChange={(e) => setSignature(e.target.value)}
-                      placeholder="例: --&#13;&#10;株式会社メールクラフト&#13;&#10;鈴木 一郎&#13;&#10;メール: ichiro.suzuki@example.com&#13;&#10;電話: 03-1234-5678"
+                      placeholder={`例: 株式会社メールクラフト 鈴木 一郎
+メール: ichiro.suzuki@example.com
+電話: 03-1234-5678`}
                     ></textarea>
                     {signature.trim() && (
                       <button
