@@ -3,11 +3,11 @@ version: '3.8'
 services:
   frontend:
     build: 
-      context: ..
-      dockerfile: .devcontainer/Dockerfile
+      context: .
+      dockerfile: ./frontend/.devcontainer/Dockerfile
     volumes:
-      - ..:/workspace:cached
-      - node_modules:/workspace/node_modules
+      - .:/workspace:cached
+      - frontend_node_modules:/workspace/frontend/node_modules
     command: sleep infinity
     environment:
       - NODE_ENV=development
@@ -23,4 +23,4 @@ networks:
     driver: bridge
 
 volumes:
-  node_modules: 
+  frontend_node_modules: 

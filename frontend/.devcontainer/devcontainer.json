@@ -1,8 +1,8 @@
 {
   "name": "MailCraft AI Frontend",
-  "dockerComposeFile": "docker-compose.yml",
+  "dockerComposeFile": ["../../docker-compose.yml"],
   "service": "frontend",
-  "workspaceFolder": "/workspace",
+  "workspaceFolder": "/workspace/frontend",
   "customizations": {
     "vscode": {
       "extensions": [
