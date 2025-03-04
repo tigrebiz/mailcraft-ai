@@ -9,10 +9,10 @@ RUN apt-get update && \
 # グローバルパッケージのインストール
 RUN npm install -g next typescript ts-node 
 
-WORKDIR /workspace
+WORKDIR /workspace/frontend
 
 # 作業ディレクトリの所有権をnodeユーザに設定
-RUN mkdir -p /workspace/node_modules && \
+RUN mkdir -p /workspace/frontend/node_modules && \
     chown -R node:node /workspace && \
     chmod -R 775 /workspace
 
