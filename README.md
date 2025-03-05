@@ -44,7 +44,12 @@ MailCraft AIは、ビジネスメールの内容を入力するだけで、AI技
    npm run dev
    ```
    
-5. ブラウザで http://localhost:3000 にアクセス
+5. docsディレクトリへのシンボリックリンクを作成
+   ```bash
+   cd frontend && ln -s ../docs docs
+   ```
+   
+6. ブラウザで http://localhost:3000 にアクセス
 
 ## 技術スタック
 
@@ -56,16 +61,20 @@ MailCraft AIは、ビジネスメールの内容を入力するだけで、AI技
 
 ```
 mailcraft-ai/
-├── src/
-│   ├── components/     # 再利用可能なUIコンポーネント
-│   ├── pages/          # ページコンポーネント
-│   ├── styles/         # グローバルスタイル
-│   ├── utils/          # ユーティリティ関数
-│   ├── services/       # APIサービス
-│   ├── hooks/          # カスタムReact Hooks
-│   └── context/        # Reactコンテキスト
-├── public/             # 静的ファイル
-└── .devcontainer/      # 開発環境設定
+├── frontend/          # フロントエンドアプリケーション
+│   ├── src/           # ソースコード
+│   │   ├── components/  # 再利用可能なUIコンポーネント
+│   │   ├── pages/       # ページコンポーネント
+│   │   ├── styles/      # グローバルスタイル
+│   │   ├── utils/       # ユーティリティ関数
+│   │   ├── services/    # APIサービス
+│   │   ├── hooks/       # カスタムReact Hooks
+│   │   └── context/     # Reactコンテキスト
+│   ├── public/          # 静的ファイル
+│   ├── .devcontainer/   # 開発環境設定
+│   └── docs/            # ドキュメント（ルートのdocsへのシンボリックリンク）
+├── docs/               # プロジェクトドキュメント
+└── docker-compose.yml  # Dockerコンポーズ設定
 ```
 
 ## ライセンス
