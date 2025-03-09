@@ -19,7 +19,7 @@ MailCraft AIは、ビジネスメールの内容を入力するだけで、AI技
 ### 前提条件
 
 - [Docker](https://www.docker.com/get-started)
-- [Visual Studio Code](https://code.visualstudio.com/)
+- [Cursor](https://www.cursor.com/ja)
 - [Remote Development拡張機能](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack)
 
 ### 開発環境の構築手順
@@ -30,14 +30,13 @@ MailCraft AIは、ビジネスメールの内容を入力するだけで、AI技
    cd mailcraft-ai
    ```
 
-2. VS Codeで開く
+2. Cursorで開く
    ```bash
-   code .
+   cursor .
    ```
 
 3. Remote-Containers拡張機能を使用して開発コンテナ内で開く
-   - VS Code左下の「><」アイコンをクリックし、「コンテナーで開く」を選択
-   - または、コマンドパレット(F1)で「Remote-Containers: Open Folder in Container」を実行
+   - コマンドパレット(F1)で「Remote-Containers: Open Folder in Container」を実行
 
 4. 開発サーバーの起動
    ```bash
@@ -77,6 +76,4 @@ mailcraft-ai/
 └── docker-compose.yml  # Dockerコンポーズ設定
 ```
 
-## ライセンス
 
-このプロジェクトは[MITライセンス](LICENSE)の下で公開されています。
