@@ -10,8 +10,7 @@
         "esbenp.prettier-vscode",
         "bradlc.vscode-tailwindcss",
         "dsznajder.es7-react-js-snippets",
-        "ms-vscode.vscode-typescript-next",
-        "github.copilot"
+        "ms-vscode.vscode-typescript-next"
       ],
       "settings": {
         "editor.formatOnSave": true,
