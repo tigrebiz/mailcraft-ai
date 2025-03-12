@@ -19,8 +19,7 @@ MailCraft AIは、ビジネスメールの内容を入力するだけで、AI技
 ### 前提条件
 
 - [Docker](https://www.docker.com/get-started)
-- [Cursor](https://www.cursor.com/ja)
-- [もしくはVSCode]
+- [Cursor (or VSCode)](https://www.cursor.com/ja)
 - [Dev Containers拡張機能](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack)
 
 ### 開発環境の構築手順
@@ -39,16 +38,18 @@ MailCraft AIは、ビジネスメールの内容を入力するだけで、AI技
    ```
 
 3. Dev Containers拡張機能を使用して開発コンテナ内で開く
-   - コマンドパレット(command+shift+P)で「Dev Containers: Rebuild and Reopen in Container」または「Dev Containers: Reopen in Container」を実行
-
-4. 立ち上がったコンテナの中で開発サーバーの起動
-   ```bash
-   npm run dev
    ```
-   
-5. docsディレクトリへのシンボリックリンクを作成
+   コマンドパレット(command+shift+P)で「Dev Containers: Rebuild and Reopen in Container」または「Dev Containers: Reopen in Container」を実行
+   ```
+
+4. （docsディレクトリへのシンボリックリンクを作成）
    ```bash
    cd frontend && ln -s ../docs docs
+   ```
+
+5. 立ち上がったコンテナの中で開発サーバーの起動
+   ```bash
+   npm run dev
    ```
    
 6. ブラウザで http://localhost:3000 にアクセス
