@@ -59,8 +59,10 @@ Git での効果的なブランチ管理は、複数人での開発をスムー�
 
 ```bash
 git checkout main
-git pull origin main
+git pull origin main # リモートリポジトリのmainブランチから現在のローカルブランチにpullする
 ```
+
+※origin はリモートリポジトリのこと。
 
 ### 2. 新しい機能ブランチを作成
 
@@ -102,7 +104,14 @@ git push -u origin feature/機能名
 git push -u origin feature/add-clear-buttons
 ```
 
-`-u`（または`--set-upstream`）オプションを使うと、次回からは単に`git push`だけでプッシュできます。
+`-u`（または`--set-upstream`）オプションを使うと、次回からは単に`git push`だけでプッシュできます。このオプションは以下の効果があります：
+
+- ローカルブランチとリモートブランチの間に**追跡関係**（トラッキング関係）を設定します
+- 一度設定すれば、以後は `git push` や `git pull` のみで対象ブランチを省略できます
+- 新しいブランチを初めてリモートにプッシュするときに使うのが一般的です
+- この追跡関係は永続的に保存されるため、繰り返し設定する必要はありません
+
+例えば上記の例では、ローカルの `feature/add-clear-buttons` ブランチが、リモートの `origin/feature/add-clear-buttons` ブランチを追跡するよう設定されます。
 
 ### 5. プルリクエストの作成
 
