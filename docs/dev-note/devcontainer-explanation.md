@@ -3,14 +3,19 @@
 ## 目次
 
 - [概要](#概要)
-- [1. devcontainer.json](#1-devcontainerjson)
-  - [基本設定](#基本設定)
-  - [VSCode固有の設定](#vscode固有の設定)
-  - [環境設定](#環境設定)
-- [2. Dockerfile](#2-dockerfile)
+- [1. Dockerfile](#1-dockerfile)
   - [基本環境の設定](#基本環境の設定)
   - [ディレクトリとユーザー設定](#ディレクトリとユーザー設定)
   - [コンテナ起動設定](#コンテナ起動設定)
+- [2. docker-compose.yml](#2-docker-composeyml)
+  - [基本設定](#基本設定)
+  - [docker-compose.ymlの位置づけ](#docker-composeymlの位置づけ)
+  - [Dockerfileとdocker-compose.ymlの役割の違い](#dockerfileとdocker-composeymlの役割の違い)
+  - [コマンド重複の理由](#コマンド重複の理由)
+- [3. devcontainer.json](#3-devcontainerjson)
+  - [基本設定](#基本設定-1)
+  - [VSCode固有の設定](#vscode固有の設定)
+  - [環境設定](#環境設定)
 - [各設定の詳細解説](#各設定の詳細解説)
   - [postCreateCommand](#postcreatecommand)
   - [remoteUser](#remoteuser)
@@ -26,14 +31,114 @@
 
 ## 概要
 
-開発コンテナとは、VSCodeで開発を行うための一貫した環境をDockerを使って提供する仕組みです。以下の2つの主要ファイルによって構成されています：
+開発コンテナとは、VSCodeで開発を行うための一貫した環境をDockerを使って提供する仕組みです。以下の3つの主要ファイルによって階層的に構成されています：
 
-- **Dockerfile**: コンテナのOS環境とシステムレベルの設定を定義
-- **devcontainer.json**: VSCodeの開発環境とプロジェクト固有の設定を定義
+- **Dockerfile**: コンテナのOS環境とシステムレベルの設定を定義（基盤レイヤー）
+- **docker-compose.yml**: 複数コンテナの構成と連携を定義（アーキテクチャレイヤー）
+- **devcontainer.json**: VSCodeの開発環境とプロジェクト固有の設定を定義（IDE連携レイヤー）
+
+これらは階層構造を成しており、下位レイヤーが上位レイヤーの基盤となります：
+1. Dockerfileでイメージ（設計図）を定義
+2. docker-compose.ymlでイメージからコンテナを作成・実行し連携を設定
+3. devcontainer.jsonでVSCodeとコンテナの統合環境を構築し、**コンテナ内をVSCodeから直接操作可能に**
 
 これらは合わせて「開発環境のIaC（Infrastructure as Code）」を実現しています。
 
-## 1. devcontainer.json
+## 1. Dockerfile
+
+このファイルはコンテナの基本環境を定義します：
+
+```dockerfile
+FROM node:18
+
+# 必要なツールのインストール
+RUN apt-get update && \
+    apt-get install -y git curl wget gnupg nano vim && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# グローバルパッケージのインストール
+RUN npm install -g next typescript ts-node 
+
+WORKDIR /workspace/frontend
+
+# 作業ディレクトリの所有権をnodeユーザに設定
+RUN mkdir -p /workspace/frontend/node_modules && \
+    chown -R node:node /workspace && \
+    chmod -R 775 /workspace
+
+USER node
+
+# コンテナ内での実行コマンド
+CMD ["sleep", "infinity"]
+```
+
+### 基本環境の設定
+- `FROM node:18`: ベースイメージとしてNode.js 18（Debian Linux上）を使用。
+- `apt-get install`: Linuxの開発ツールをインストール（git, curl, vim等）。
+- `apt-get clean` と `rm -rf /var/lib/apt/lists/*`: パッケージインストール後の不要なキャッシュとインデックスファイルを削除してイメージサイズを最小化。
+- `npm install -g`: フロントエンド開発ツールをグローバルにインストール。
+
+### ディレクトリとユーザー設定
+- `WORKDIR /workspace/frontend`: コンテナ内の作業ディレクトリを設定。以降のすべてのコマンド（RUN, CMD, COPY等）はこのディレクトリを基準に実行される。
+- `mkdir -p`: 必要なディレクトリ構造を再帰的に作成。
+- `chown -R node:node`: ディレクトリの所有者をnodeユーザーに設定。
+- `chmod -R 775`: ディレクトリに適切な権限を設定（所有者とグループに読み書き実行権限、その他のユーザーに読み取りと実行権限）。
+- `USER node`: 非rootユーザーとして実行（セキュリティのベストプラクティス）。
+
+### コンテナ起動設定
+- `CMD ["sleep", "infinity"]`: コンテナを常に起動状態に保つためのコマンド。コンテナ起動時に実行され、これによりコンテナがバックグラウンドで動作し続ける。
+
+## 2. docker-compose.yml
+
+このファイルは複数のコンテナサービスを一元管理し、それらの関係性を定義します：
+
+```yaml
+version: '3.8'
+services:
+  frontend:
+    build:
+      context: ./frontend/.devcontainer
+      dockerfile: Dockerfile
+    volumes:
+      - ./frontend:/workspace/frontend
+    command: sleep infinity
+    ports:
+      - 3000:3000
+    networks:
+      - mailcraft-network
+
+networks:
+  mailcraft-network:
+    driver: bridge
+```
+
+### 基本設定
+- `services`: アプリケーションを構成する各コンテナサービスを定義。
+- `build`: Dockerfileからイメージを構築する設定。
+- `volumes`: ホストとコンテナ間のディレクトリマッピング。
+- `command`: コンテナ起動時に実行するコマンド（Dockerfileの`CMD`を上書き）。
+- `ports`: ホストとコンテナのポートマッピング。
+- `networks`: コンテナ間の通信ネットワーク設定。
+
+### docker-compose.ymlの位置づけ
+- **階層構造**: DockerfileとdevcontainerJSONの間の中間層（アーキテクチャレイヤー）
+- **役割**: イメージからコンテナを作成・起動し、複数コンテナの連携を定義
+- **実行タイミング**: `docker-compose up`コマンドまたはVSCodeのDevContainer起動時
+
+### Dockerfileとdocker-compose.ymlの役割の違い
+- **Dockerfile**: イメージを「定義・構築」するためのもの（設計図を作成）
+- **docker-compose.yml**: イメージから「コンテナを作成・実行」するもの（設計図を元に実際の構造物を建設）
+- docker-compose.ymlを利用せずにDockerfileのみで開発コンテナを構築することも可能（専用のコマンドを使用する）
+
+### コマンド重複の理由
+Dockerfileの`CMD ["sleep", "infinity"]`とdocker-composeの`command: sleep infinity`は同様の目的を持ちますが、次の理由で重複して定義されています：
+
+1. 異なる実行コンテキスト（Dockerfile単体での使用とdocker-compose環境での使用）に対応するため
+2. DevContainerを単一Dockerfileのみで使用する場合のフォールバック設定として
+3. コンテナを常に起動状態に保つために両環境でも確実に設定するため
+
+## 3. devcontainer.json
 
 このファイルはVSCodeの開発コンテナ機能のための設定ファイルです。主な設定項目の解説を以下に示します：
 
@@ -93,48 +198,6 @@
 - `forwardPorts`: コンテナからホストに転送するポート（ブラウザでアクセスするため）。
 - `postCreateCommand`: コンテナ作成後に実行するコマンド（プロジェクト依存関係のインストール）。
 - `remoteUser`: コンテナ内で使用するユーザー名。
-
-## 2. Dockerfile
-
-このファイルはコンテナの基本環境を定義します：
-
-```dockerfile
-FROM node:18
-
-# 必要なツールのインストール
-RUN apt-get update && \
-    apt-get install -y git curl wget gnupg nano vim && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# グローバルパッケージのインストール
-RUN npm install -g next typescript ts-node 
-
-WORKDIR /workspace/frontend
-
-# 作業ディレクトリの所有権をnodeユーザに設定
-RUN mkdir -p /workspace/frontend/node_modules && \
-    chown -R node:node /workspace && \
-    chmod -R 775 /workspace
-
-USER node
-
-# コンテナ内での実行コマンド
-CMD ["sleep", "infinity"]
-```
-
-### 基本環境の設定
-- `FROM node:18`: ベースイメージとしてNode.js 18（Debian Linux上）を使用。
-- `apt-get install`: Linuxの開発ツールをインストール（git, curl, vim等）。
-- `npm install -g`: フロントエンド開発ツールをグローバルにインストール。
-
-### ディレクトリとユーザー設定
-- `WORKDIR`: 作業ディレクトリを設定。
-- `mkdir`, `chown`, `chmod`: 適切な権限とディレクトリ構造を作成。
-- `USER node`: 非rootユーザーとして実行（セキュリティのベストプラクティス）。
-
-### コンテナ起動設定
-- `CMD ["sleep", "infinity"]`: コンテナを常に起動状態に保つためのコマンド。
 
 ## 各設定の詳細解説
 
