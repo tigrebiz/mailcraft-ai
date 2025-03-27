@@ -1,22 +1,26 @@
-FROM node:18
+FROM node:18-slim
 
-# 必要なツールのインストール
+# 必要最小限のツールのみインストール
 RUN apt-get update && \
-    apt-get install -y git curl wget gnupg nano vim && \
+    apt-get install -y git curl && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# グローバルパッケージのインストール
-RUN npm install -g next typescript ts-node 
+# 作業ディレクトリの作成と権限設定
+RUN mkdir -p /workspace/frontend && \
+    chown -R node:node /workspace && \
+    chmod -R 755 /workspace
 
 WORKDIR /workspace/frontend
 
-# 作業ディレクトリの所有権をnodeユーザに設定
-RUN mkdir -p /workspace/frontend/node_modules && \
-    chown -R node:node /workspace && \
-    chmod -R 775 /workspace
+# package.jsonとpackage-lock.jsonをコピー
+COPY --chown=node:node frontend/package*.json ./
 
+# nodeユーザーに切り替え
 USER node
+
+# 依存関係をインストール（グローバルインストールを避け、プロジェクトの依存関係として管理）
+RUN npm install
 
 # コンテナ内での実行コマンド
 CMD ["sleep", "infinity"] 
